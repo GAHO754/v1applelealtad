@@ -1,4 +1,4 @@
-// ocr.js PRO Applebee's
+// ocr.js PRO Applebee's FINAL
 
 function normalizarTextoBase(texto) {
   return String(texto || "")
@@ -10,7 +10,6 @@ function normalizarTextoBase(texto) {
     .replace(/T0TA1/gi, "TOTAL")
     .replace(/TOTL/gi, "TOTAL")
     .replace(/SUB[-\s]*TOTAL/gi, "SUBTOTAL")
-    .replace(/SUB[-\s]*T0TAL/gi, "SUBTOTAL")
     .replace(/IMP[.\s]*TOTAL/gi, "IMP.TOTAL")
     .replace(/IMPT[.\s]*TOTAL/gi, "IMP.TOTAL")
     .replace(/IVA\s*IMPUESTO/gi, "IVA IMPUESTO")
@@ -28,13 +27,12 @@ function obtenerLineas(texto) {
 function normalizarMonto(valor) {
   if (!valor) return 0;
 
-  let v = String(valor)
-    .replace(/\$/g, "")
-    .replace(/\s/g, "")
-    .replace(",", ".")
-    .replace(/[^\d.]/g, "");
-
-  return Number(v);
+  return Number(
+    String(valor)
+      .replace(/\$/g, "")
+      .replace(",", ".")
+      .replace(/[^\d.]/g, "")
+  );
 }
 
 function extraerFecha(texto) {
@@ -54,20 +52,17 @@ function extraerFolio(texto) {
   const lineas = obtenerLineas(texto);
   const todo = lineas.join("\n").toUpperCase();
 
-  const ignorar = new Set([
-    "32530", // CP
-    "1585"   // dirección si el OCR la llega a confundir
-  ]);
+  const ignorar = new Set(["32530", "1585"]);
 
-  // 1. Mejor caso: fecha, hora y folio vienen juntos en el mismo bloque
-  let match = todo.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}[\s\S]{0,80}\d{1,2}:\d{2}\s*(?:AM|PM)?[\s\S]{0,40}\b(\d{5})\b/i);
+  // 🔥 1. Fecha + hora + folio (caso ideal)
+  let match = todo.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}[\s\S]{0,80}\d{1,2}:\d{2}[\s\S]{0,40}\b(\d{5})\b/);
   if (match && !ignorar.has(match[1])) return match[1];
 
-  // 2. Buscar folio en las líneas cercanas a la fecha
+  // 🔥 2. Cerca de la fecha
   const idxFecha = lineas.findIndex(l => /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(l));
 
   if (idxFecha >= 0) {
-    const zona = lineas.slice(idxFecha, idxFecha + 5).join(" ");
+    const zona = lineas.slice(idxFecha, idxFecha + 6).join(" ");
     const nums = zona.match(/\b\d{5}\b/g) || [];
 
     for (const n of nums) {
@@ -75,15 +70,28 @@ function extraerFolio(texto) {
     }
   }
 
-  // 3. Buscar número de 5 dígitos cerca de la hora
-  match = todo.match(/\d{1,2}:\d{2}\s*(?:AM|PM)?[\s\S]{0,40}\b(\d{5})\b/i);
-  if (match && !ignorar.has(match[1])) return match[1];
+  // 🔥 3. NUEVO: cerca de la hora (esto corrige tu error actual)
+  for (let i = 0; i < lineas.length; i++) {
+    if (/\d{1,2}:\d{2}/.test(lineas[i])) {
+      const zonaHora = lineas.slice(i, i + 4).join(" ");
+      const nums = zonaHora.match(/\b\d{5}\b/g) || [];
 
-  // 4. Fallback: todos los números de 5 dígitos, ignorando CP
+      for (const n of nums) {
+        if (!ignorar.has(n)) return n;
+      }
+    }
+  }
+
+  // 🔥 4. Fallback INTELIGENTE (evita números basura)
   const todos = todo.match(/\b\d{5}\b/g) || [];
 
   for (const n of todos) {
-    if (!ignorar.has(n)) return n;
+    if (ignorar.has(n)) continue;
+
+    // solo acepta folios válidos tipo Applebee's
+    if (/^[245]\d{4}$/.test(n)) {
+      return n;
+    }
   }
 
   return "";
@@ -92,32 +100,16 @@ function extraerFolio(texto) {
 function extraerTotal(texto) {
   const lineas = obtenerLineas(texto);
 
-  /*
-    Queremos este:
-    Total          546.00
-
-    Y NO estos:
-    Sub-total      470.69
-    IVA Impuesto    75.31
-    Imp.Total       75.31
-    Propina         81.90
-    Total           627.90  ← este es total con propina, se ignora
-  */
-
   for (let i = 0; i < lineas.length; i++) {
     const lineaOriginal = lineas[i];
     const linea = lineaOriginal.toUpperCase();
 
-    // Ignorar campos que no son el total real
+    // ❌ ignorar campos incorrectos
     if (
       linea.includes("SUBTOTAL") ||
-      linea.includes("SUB-TOTAL") ||
       linea.includes("IVA") ||
-      linea.includes("IMPUESTO") ||
-      linea.includes("IMP.TOTAL") ||
-      linea.includes("IMPTOTAL") ||
+      linea.includes("IMP") ||
       linea.includes("PROPINA") ||
-      linea.includes("EFECTIVO") ||
       linea.includes("VISA") ||
       linea.includes("MASTER") ||
       linea.includes("AUTH")
@@ -125,44 +117,22 @@ function extraerTotal(texto) {
       continue;
     }
 
-    // Debe empezar con TOTAL o ser TOTAL exacto
-    const esLineaTotal =
-      /^TOTAL\b/.test(linea) ||
-      /^T0TAL\b/.test(linea) ||
-      /^TOTAI\b/.test(linea) ||
-      /^TOTA1\b/.test(linea);
+    // ✅ SOLO TOTAL REAL
+    if (/^TOTAL\b/.test(linea)) {
 
-    if (!esLineaTotal) continue;
+      const montos = lineaOriginal.match(/\d+[.,]\d{2}/g);
 
-    // Tomar el monto de esa misma línea
-    const montosLinea = lineaOriginal.match(/\$?\s*\d{1,5}[.,]\d{2}/g);
+      if (montos) {
+        return normalizarMonto(montos[montos.length - 1]).toFixed(2);
+      }
 
-    if (montosLinea && montosLinea.length) {
-      const monto = normalizarMonto(montosLinea[montosLinea.length - 1]);
+      const siguiente = lineas[i + 1] || "";
+      const match2 = siguiente.match(/\d+[.,]\d{2}/);
 
-      // filtro lógico: normalmente el total real es mayor a 50
-      if (monto > 0) {
-        return monto.toFixed(2);
+      if (match2) {
+        return normalizarMonto(match2[0]).toFixed(2);
       }
     }
-
-    // Si OCR separó el monto en la siguiente línea
-    const siguiente = lineas[i + 1] || "";
-    const montosSig = siguiente.match(/\$?\s*\d{1,5}[.,]\d{2}/g);
-
-    if (montosSig && montosSig.length) {
-      const monto = normalizarMonto(montosSig[0]);
-      if (monto > 0) return monto.toFixed(2);
-    }
-  }
-
-  // Fallback inteligente:
-  // buscar todos los montos después de "IMP.TOTAL" y antes de "PROPINA"
-  const textoCompleto = lineas.join("\n").toUpperCase();
-
-  const zonaTotal = textoCompleto.match(/IMP\.?TOTAL[\s\S]{0,120}?TOTAL[\s\S]{0,40}?(\d{1,5}[.,]\d{2})/i);
-  if (zonaTotal && zonaTotal[1]) {
-    return normalizarMonto(zonaTotal[1]).toFixed(2);
   }
 
   return "";
@@ -191,15 +161,11 @@ async function analizarTicketOCR(file) {
   console.log("===== OCR ORIGINAL =====");
   console.log(textoOriginal);
 
-  console.log("===== LINEAS OCR =====");
+  console.log("===== LINEAS =====");
   console.table(obtenerLineas(textoOriginal));
 
-  console.log("===== RESULTADO OCR =====");
+  console.log("===== RESULTADO FINAL =====");
   console.log({ folio, fecha, total });
 
-  return {
-    folio,
-    fecha,
-    total
-  };
+  return { folio, fecha, total };
 }
