@@ -441,3 +441,16 @@ async function mostrarHistorial(tipo) {
     });
   }
 }
+
+function togglePassword() {
+  const input = document.getElementById("password");
+  const icon = document.querySelector(".toggle-pass");
+
+  if (input.type === "password") {
+    input.type = "text";
+    icon.textContent = "🙈";
+  } else {
+    input.type = "password";
+    icon.textContent = "👁️";
+  }
+}
