@@ -1,0 +1,23 @@
+{
+  "name": "Applebee’s Lealtad",
+  "short_name": "Applebee’s",
+  "description": "Programa de lealtad Applebee’s",
+  "start_url": "/login.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050c13",
+  "theme_color": "#e31837",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
