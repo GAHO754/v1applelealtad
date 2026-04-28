@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Escanear ticket | Applebee’s Lealtad</title>
+  <link rel="stylesheet" href="cliente.css" />
+</head>
+<body>
+
+  <main class="app-page">
+    <header class="app-header">
+      <div>
+        <h1>Escanear ticket</h1>
+        <p>Toma una foto clara de tu ticket.</p>
+      </div>
+      <a class="btn-back" href="panel.html">←</a>
+    </header>
+
+    <section class="scan-card">
+      <label class="upload-box">
+        <input type="file" id="ticketImage" accept="image/*" capture="environment" onchange="previewTicket(event)" />
+        <span>📸</span>
+        <strong>Tomar foto del ticket</strong>
+        <small>Compatible con Android, iOS y Huawei</small>
+      </label>
+
+      <img id="previewImage" class="ticket-preview" style="display:none;" />
+
+      <button class="btn-primary" onclick="procesarTicketOCR()">Analizar ticket</button>
+
+      <div class="status-box" id="ocrStatus">
+        Esperando imagen del ticket...
+      </div>
+    </section>
+
+    <section class="form-card">
+      <h2>Datos detectados</h2>
+
+      <div class="form-group">
+        <label>Sucursal</label>
+        <select id="sucursal">
+          <option value="">Selecciona sucursal</option>
+          <option value="applebees_torres">Applebee’s Torres</option>
+          <option value="applebees_triunfo">Applebee’s Triunfo</option>
+          <option value="applebees_tecnologico">Applebee’s Tecnológico</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Número de ticket</label>
+        <input type="text" id="folio" placeholder="Ej. 20004" maxlength="5" />
+      </div>
+
+      <div class="form-group">
+        <label>Fecha de consumo</label>
+        <input type="date" id="fechaTicket" />
+      </div>
+
+      <div class="form-group">
+        <label>Importe total</label>
+        <input type="number" id="totalTicket" placeholder="0.00" step="0.01" />
+      </div>
+
+      <button class="btn-primary" onclick="registrarTicketCliente()">
+        Registrar ticket
+      </button>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <script src="firebase.js"></script>
+  <script src="ocr.js"></script>
+  <script src="cliente.js"></script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi monedero | Applebee’s Lealtad</title>
+  <link rel="stylesheet" href="cliente.css" />
+</head>
+<body>
+
+  <main class="app-page">
+    <header class="app-header">
+      <div>
+        <h1>Mi monedero</h1>
+        <p>Consulta tu saldo disponible.</p>
+      </div>
+      <a class="btn-back" href="panel.html">←</a>
+    </header>
+
+    <section class="wallet-card">
+      <p>Saldo disponible</p>
+      <h2 id="saldoMonedero">$0.00</h2>
+      <small>Vigencia: 6 meses desde cada ticket registrado.</small>
+    </section>
+
+    <section class="stats-grid">
+      <div class="stat-card">
+        <p>Total gastado</p>
+        <h3 id="totalGastado">$0.00</h3>
+      </div>
+
+      <div class="stat-card">
+        <p>Tickets registrados</p>
+        <h3 id="ticketsRegistrados">0</h3>
+      </div>
+
+      <div class="stat-card">
+        <p>Canjes realizados</p>
+        <h3 id="canjesRealizados">0</h3>
+      </div>
+    </section>
+
+    <section class="list-card">
+      <h2>Movimientos recientes</h2>
+      <div id="listaMovimientos" class="list-empty">
+        Sin movimientos todavía.
+      </div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <script src="firebase.js"></script>
+  <script src="cliente.js"></script>
+</body>
+</html>

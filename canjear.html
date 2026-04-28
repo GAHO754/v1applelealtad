@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Canjear | Applebee’s Lealtad</title>
+  <link rel="stylesheet" href="cliente.css" />
+</head>
+<body>
+
+  <main class="app-page">
+    <header class="app-header">
+      <div>
+        <h1>Canjear beneficios</h1>
+        <p>Selecciona una cortesía disponible.</p>
+      </div>
+      <a class="btn-back" href="panel.html">←</a>
+    </header>
+
+    <section class="wallet-card">
+      <p>Saldo disponible</p>
+      <h2 id="saldoCanje">$0.00</h2>
+    </section>
+
+    <section class="benefits-list">
+      <div class="benefit-card">
+        <div>
+          <h3>Postre de cortesía</h3>
+          <p>Canje válido en restaurante.</p>
+          <strong>$80.00</strong>
+        </div>
+        <button onclick="generarCanjeCliente('Postre de cortesía', 80)">
+          Canjear
+        </button>
+      </div>
+
+      <div class="benefit-card">
+        <div>
+          <h3>Entrada seleccionada</h3>
+          <p>Canje sujeto a disponibilidad.</p>
+          <strong>$120.00</strong>
+        </div>
+        <button onclick="generarCanjeCliente('Entrada seleccionada', 120)">
+          Canjear
+        </button>
+      </div>
+
+      <div class="benefit-card">
+        <div>
+          <h3>Boneless cortesía</h3>
+          <p>Válido en Applebee’s participantes.</p>
+          <strong>$180.00</strong>
+        </div>
+        <button onclick="generarCanjeCliente('Boneless cortesía', 180)">
+          Canjear
+        </button>
+      </div>
+    </section>
+
+    <section class="qr-card" id="qrSection" style="display:none;">
+      <h2>Tu QR de canje</h2>
+      <p>Muéstralo al gerente para validar tu cortesía.</p>
+      <div id="qrCode"></div>
+      <small>Este QR solo puede usarse una vez.</small>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+  <script src="firebase.js"></script>
+  <script src="cliente.js"></script>
+</body>
+</html>

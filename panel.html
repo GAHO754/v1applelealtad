@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel | Applebee’s Lealtad</title>
+  <link rel="stylesheet" href="cliente.css" />
+</head>
+<body>
+
+  <main class="app-page">
+    <header class="app-header">
+      <div>
+        <h1>Hola, <span id="nombreCliente">Cliente</span></h1>
+        <p>Bienvenido a tu programa de lealtad</p>
+      </div>
+      <button class="btn-logout" onclick="cerrarSesion()">Salir</button>
+    </header>
+
+    <section class="wallet-card">
+      <p>Monedero disponible</p>
+      <h2 id="saldoCliente">$0.00</h2>
+      <small>Tu dinero electrónico vence en 6 meses desde cada compra registrada.</small>
+    </section>
+
+    <section class="menu-grid">
+      <a class="menu-card" href="escanear-ticket.html">
+        <span>📸</span>
+        <h3>Escanear ticket</h3>
+        <p>Registra tu consumo y acumula monedero.</p>
+      </a>
+
+      <a class="menu-card" href="monedero.html">
+        <span>💰</span>
+        <h3>Mi monedero</h3>
+        <p>Consulta saldo, movimientos y vencimientos.</p>
+      </a>
+
+      <a class="menu-card" href="canjear.html">
+        <span>🎁</span>
+        <h3>Canjear beneficios</h3>
+        <p>Genera un QR para canjear en restaurante.</p>
+      </a>
+
+      <a class="menu-card" href="historial.html">
+        <span>📋</span>
+        <h3>Historial</h3>
+        <p>Consulta tus tickets y canjes.</p>
+      </a>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <script src="firebase.js"></script>
+  <script src="cliente.js"></script>
+</body>
+</html>

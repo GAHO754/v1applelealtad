@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Applebee’s Lealtad | Login</title>
+  <link rel="stylesheet" href="cliente.css" />
+</head>
+<body>
+
+  <main class="auth-page">
+    <section class="auth-card">
+      <div class="brand">
+        <div class="brand-logo">A</div>
+        <h1>Applebee’s</h1>
+        <p>Programa de Lealtad</p>
+      </div>
+
+      <h2>Iniciar sesión</h2>
+
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" id="email" placeholder="correo@ejemplo.com" />
+      </div>
+
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="password" placeholder="Tu contraseña" />
+      </div>
+
+      <button class="btn-primary" onclick="loginCliente()">Entrar</button>
+
+      <p class="auth-link">
+        ¿No tienes cuenta?
+        <a href="registro.html">Crear cuenta</a>
+      </p>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <script src="firebase.js"></script>
+  <script src="cliente.js"></script>
+</body>
+</html>

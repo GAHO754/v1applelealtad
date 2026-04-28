@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Historial | Applebee’s Lealtad</title>
+  <link rel="stylesheet" href="cliente.css" />
+</head>
+<body>
+
+  <main class="app-page">
+    <header class="app-header">
+      <div>
+        <h1>Historial</h1>
+        <p>Consulta tus tickets y canjes.</p>
+      </div>
+      <a class="btn-back" href="panel.html">←</a>
+    </header>
+
+    <section class="tabs">
+      <button class="tab active" onclick="mostrarHistorial('tickets')">
+        Tickets
+      </button>
+      <button class="tab" onclick="mostrarHistorial('canjes')">
+        Canjes
+      </button>
+    </section>
+
+    <section class="list-card">
+      <h2 id="historialTitulo">Tickets registrados</h2>
+      <div id="historialLista" class="list-empty">
+        Cargando historial...
+      </div>
+    </section>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+
+  <script src="firebase.js"></script>
+  <script src="cliente.js"></script>
+</body>
+</html>
