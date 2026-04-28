@@ -645,3 +645,26 @@ a {
   cursor: pointer;
   backdrop-filter: blur(8px);
 }
+/*ocultarpassword*/
+.password-box {
+  position: relative;
+}
+
+.password-box input {
+  width: 100%;
+  padding-right: 45px;
+}
+
+.toggle-pass {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  opacity: 0.7;
+}
+
+.toggle-pass:hover {
+  opacity: 1;
+}
