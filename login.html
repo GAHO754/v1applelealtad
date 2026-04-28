@@ -39,7 +39,10 @@
 
       <div class="form-group">
         <label>Contraseña</label>
-        <input type="password" id="password" placeholder="Tu contraseña" />
+        <div class="password-box">
+  <input type="password" id="password" placeholder="Tu contraseña" />
+  <span class="toggle-pass" onclick="togglePassword()">👁️</span>
+</div>
       </div>
 
       <button class="btn-primary" onclick="loginCliente()">Entrar</button>
