@@ -1,37 +1,30 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>Applebee’s Lealtad | Login</title>
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" sizes="32x32" href="manzanas.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="manzanas.png" />
+  <link rel="apple-touch-icon" href="manzanas.png" />
 
-  <!-- CSS -->
   <link rel="stylesheet" href="cliente.css" />
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#e31837" />
 
-  <!-- iOS soporte app -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Applebee’s" />
-
-  <!-- Icono iPhone -->
-  <link rel="apple-touch-icon" href="manzanas.png" />
 </head>
 
 <body>
-
   <main class="auth-page">
     <section class="auth-card">
       <div class="brand">
         <div class="brand-logo">
-        <img src="manzanas.png" alt="Applebee's" />
+          <img src="manzanas.png" alt="Applebee's" />
         </div>
         <h1>Applebee’s</h1>
         <p>Programa de Lealtad</p>
@@ -51,6 +44,10 @@
 
       <button class="btn-primary" onclick="loginCliente()">Entrar</button>
 
+      <button id="installAppBtn" class="btn-install" onclick="instalarApp()" style="display:none;">
+        📲 Instalar app
+      </button>
+
       <p class="auth-link">
         ¿No tienes cuenta?
         <a href="registro.html">Crear cuenta</a>
@@ -65,12 +62,14 @@
 
   <script src="firebase.js"></script>
   <script src="cliente.js"></script>
+  <script src="install-app.js"></script>
+
   <script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js")
-      .then(() => console.log("Service Worker registrado"))
-      .catch(error => console.error("Error Service Worker:", error));
-  }
-</script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(() => console.log("Service Worker registrado"))
+        .catch(error => console.error("Error Service Worker:", error));
+    }
+  </script>
 </body>
 </html>
