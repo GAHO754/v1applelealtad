@@ -1,16 +1,12 @@
 // ocr.js
-
 function limpiarTextoOCR(texto) {
   return texto
     .replace(/\r/g, "\n")
     .replace(/[|]/g, " ")
-    .replace(/S/g, "S")
-    .replace(/O/g, "0")
-    .replace(/TOTAL\s*:/gi, "TOTAL ")
     .replace(/T0TAL/gi, "TOTAL")
-    .replace(/IMPORTE/gi, "TOTAL")
-    .replace(/PAGADO/gi, "TOTAL")
-    .replace(/FECHA\s*:/gi, "FECHA ")
+    .replace(/TOTAI/gi, "TOTAL")
+    .replace(/TOTL/gi, "TOTAL")
+    .replace(/PROPINA/gi, "PROPINA")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -18,95 +14,64 @@ function limpiarTextoOCR(texto) {
 function extraerFolio(texto) {
   const limpio = texto.toUpperCase();
 
-  const patrones = [
-    /FOLIO\s*[:#]?\s*(\d{5})/,
-    /TICKET\s*[:#]?\s*(\d{5})/,
-    /NO\.?\s*TICKET\s*[:#]?\s*(\d{5})/,
-    /NUM\.?\s*TICKET\s*[:#]?\s*(\d{5})/,
-    /\b(\d{5})\b/
-  ];
+  // 🔥 PRIORIDAD: buscar cerca de "Reimpresion No"
+  let match = limpio.match(/REIMPRESION\s*NO\s*[:.]?\s*(\d{1,3}).*?(\d{5})/);
+  if (match && match[2]) return match[2];
 
-  for (const p of patrones) {
-    const match = limpio.match(p);
-    if (match && match[1]) {
-      const folio = match[1];
+  // 🔥 buscar número de 5 dígitos cerca de hora
+  match = limpio.match(/\d{1,2}:\d{2}.*?(\d{5})/);
+  if (match && match[1]) return match[1];
 
-      if (folio !== "32530") {
-        return folio;
-      }
-    }
-  }
+  // fallback
+  match = limpio.match(/\b(\d{5})\b/);
+  if (match) return match[1];
 
   return "";
 }
 
 function extraerFecha(texto) {
-  const limpio = texto.toUpperCase();
+  const match = texto.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (!match) return "";
 
-  const patrones = [
-    /(\d{2})[\/\-](\d{2})[\/\-](\d{4})/,
-    /(\d{4})[\/\-](\d{2})[\/\-](\d{2})/
-  ];
+  const dd = match[1];
+  const mm = match[2];
+  const yyyy = match[3];
 
-  for (const p of patrones) {
-    const match = limpio.match(p);
-
-    if (!match) continue;
-
-    if (match[1].length === 4) {
-      const yyyy = match[1];
-      const mm = match[2];
-      const dd = match[3];
-      return `${yyyy}-${mm}-${dd}`;
-    } else {
-      const dd = match[1];
-      const mm = match[2];
-      const yyyy = match[3];
-      return `${yyyy}-${mm}-${dd}`;
-    }
-  }
-
-  return "";
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function extraerTotal(texto) {
   const limpio = texto.toUpperCase();
 
-  const lineas = limpio
-    .split(/[\n]/)
-    .map(l => l.trim())
-    .filter(Boolean);
+  const lineas = limpio.split("\n").map(l => l.trim());
 
-  const candidatos = [];
+  // 🔥 PASO 1: buscar SOLO líneas que empiezan con "TOTAL"
+  for (let i = 0; i < lineas.length; i++) {
+    const linea = lineas[i];
 
-  for (const linea of lineas) {
-    if (
-      linea.includes("TOTAL") ||
-      linea.includes("IMPORTE") ||
-      linea.includes("PAGADO")
-    ) {
-      const nums = linea.match(/\d+[.,]\d{2}/g);
-      if (nums) {
-        nums.forEach(n => candidatos.push(n));
+    // SOLO "TOTAL" exacto
+    if (linea.startsWith("TOTAL")) {
+
+      // ❌ ignorar si contiene propina
+      if (linea.includes("PROPINA")) continue;
+
+      const match = linea.match(/\d+[.,]\d{2}/);
+
+      if (match) {
+        return normalizarMonto(match[0]).toFixed(2);
+      }
+
+      // 🔥 si el número está en la siguiente línea
+      const siguiente = lineas[i + 1] || "";
+      const match2 = siguiente.match(/\d+[.,]\d{2}/);
+
+      if (match2) {
+        return normalizarMonto(match2[0]).toFixed(2);
       }
     }
   }
 
-  if (candidatos.length > 0) {
-    return normalizarMonto(candidatos[candidatos.length - 1]);
-  }
-
-  const todos = limpio.match(/\d+[.,]\d{2}/g);
-
-  if (!todos || todos.length === 0) {
-    return "";
-  }
-
-  const montos = todos.map(normalizarMonto).filter(n => n > 0);
-
-  if (!montos.length) return "";
-
-  return Math.max(...montos).toFixed(2);
+  return "";
 }
 
 function normalizarMonto(valor) {
