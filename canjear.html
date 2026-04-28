@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Canjear | Applebee’s Lealtad</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="manzanas.png">
   <link rel="stylesheet" href="cliente.css" />
 </head>
 <body>
@@ -74,5 +75,12 @@
 
   <script src="firebase.js"></script>
   <script src="cliente.js"></script>
+  <script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(() => console.log("Service Worker registrado"))
+      .catch(error => console.error("Error Service Worker:", error));
+  }
+</script>
 </body>
 </html>
