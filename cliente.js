@@ -1,7 +1,9 @@
-// cliente.js
+// cliente.js PRO
 
 const PERCENT_BACK = 0.05;
 const VENCE_DIAS = 180;
+
+let ticketOCRValido = false;
 
 function money(n) {
   return "$" + Number(n || 0).toFixed(2);
@@ -26,6 +28,8 @@ function cerrarSesion() {
     window.location.href = "login.html";
   });
 }
+
+// ================= LOGIN =================
 
 async function loginCliente() {
   const email = document.getElementById("email").value.trim();
@@ -76,10 +80,13 @@ async function registrarCliente() {
   }
 }
 
+// ================= AUTH =================
+
 auth.onAuthStateChanged(async (user) => {
   const page = location.pathname.split("/").pop();
 
   const publicPages = ["login.html", "registro.html", ""];
+
   if (!user && !publicPages.includes(page)) {
     window.location.href = "login.html";
     return;
@@ -93,6 +100,8 @@ auth.onAuthStateChanged(async (user) => {
     await cargarDatosCliente(user);
   }
 });
+
+// ================= DATOS CLIENTE =================
 
 async function cargarDatosCliente(user) {
   const userRef = db.collection("users").doc(user.uid);
@@ -139,9 +148,23 @@ async function cargarDatosCliente(user) {
   }
 }
 
+// ================= ESCANEO TICKET =================
+
 function previewTicket(event) {
   const file = event.target.files[0];
   if (!file) return;
+
+  ticketOCRValido = false;
+
+  const folio = document.getElementById("folio");
+  const fecha = document.getElementById("fechaTicket");
+  const total = document.getElementById("totalTicket");
+  const btn = document.getElementById("btnRegistrarTicket");
+
+  if (folio) folio.value = "";
+  if (fecha) fecha.value = "";
+  if (total) total.value = "";
+  if (btn) btn.disabled = true;
 
   const preview = document.getElementById("previewImage");
   preview.src = URL.createObjectURL(file);
@@ -154,9 +177,13 @@ function previewTicket(event) {
 async function procesarTicketOCR() {
   const input = document.getElementById("ticketImage");
   const status = document.getElementById("ocrStatus");
+  const btn = document.getElementById("btnRegistrarTicket");
+
+  ticketOCRValido = false;
+  if (btn) btn.disabled = true;
 
   if (!input.files.length) {
-    alert("Primero toma o selecciona una foto del ticket.");
+    alert("Primero toma una foto del ticket.");
     return;
   }
 
@@ -165,20 +192,83 @@ async function procesarTicketOCR() {
 
     const result = await analizarTicketOCR(input.files[0]);
 
-    if (result.folio) document.getElementById("folio").value = result.folio;
-    if (result.fecha) document.getElementById("fechaTicket").value = result.fecha;
-    if (result.total) document.getElementById("totalTicket").value = result.total;
+    const folio = result.folio || "";
+    const fecha = result.fecha || "";
+    const total = result.total || "";
 
-    status.innerText = "Ticket analizado. Revisa los datos antes de registrar.";
+    document.getElementById("folio").value = folio;
+    document.getElementById("fechaTicket").value = fecha;
+    document.getElementById("totalTicket").value = total;
+
+    if (!folio || !fecha || !total) {
+      status.innerText = "No se detectaron todos los datos. Vuelve a tomar la foto.";
+      alert("No se detectó folio, fecha o total. Vuelve a tomar la foto.");
+      return;
+    }
+
+    if (!/^\d{5}$/.test(folio)) {
+      status.innerText = "El folio detectado no es válido. Vuelve a tomar la foto.";
+      alert("El folio detectado no es válido.");
+      return;
+    }
+
+    if (fecha > todayISO()) {
+      status.innerText = "La fecha detectada no puede ser futura.";
+      alert("La fecha detectada no puede ser futura.");
+      return;
+    }
+
+    if (Number(total) <= 0) {
+      status.innerText = "El total detectado no es válido. Vuelve a tomar la foto.";
+      alert("El total detectado no es válido.");
+      return;
+    }
+
+    ticketOCRValido = true;
+
+    if (btn) btn.disabled = false;
+
+    status.innerText = "Ticket analizado correctamente. Ya puedes registrarlo.";
   } catch (error) {
-    status.innerText = "No se pudo leer el ticket. Puedes capturar los datos manualmente.";
     console.error(error);
+    status.innerText = "No se pudo leer el ticket. Vuelve a tomar la foto.";
+    alert("No se pudo leer el ticket. Vuelve a tomar la foto.");
   }
 }
+
+function reiniciarEscaneoTicket() {
+  ticketOCRValido = false;
+
+  const input = document.getElementById("ticketImage");
+  const preview = document.getElementById("previewImage");
+  const status = document.getElementById("ocrStatus");
+  const btn = document.getElementById("btnRegistrarTicket");
+
+  if (input) input.value = "";
+
+  if (preview) {
+    preview.src = "";
+    preview.style.display = "none";
+  }
+
+  if (document.getElementById("folio")) document.getElementById("folio").value = "";
+  if (document.getElementById("fechaTicket")) document.getElementById("fechaTicket").value = "";
+  if (document.getElementById("totalTicket")) document.getElementById("totalTicket").value = "";
+
+  if (btn) btn.disabled = true;
+  if (status) status.innerText = "Esperando imagen del ticket...";
+}
+
+// ================= REGISTRAR TICKET =================
 
 async function registrarTicketCliente() {
   const user = auth.currentUser;
   if (!user) return;
+
+  if (!ticketOCRValido) {
+    alert("Primero debes analizar correctamente el ticket con OCR.");
+    return;
+  }
 
   const sucursal = document.getElementById("sucursal").value;
   const folio = document.getElementById("folio").value.trim();
@@ -186,7 +276,7 @@ async function registrarTicketCliente() {
   const total = Number(document.getElementById("totalTicket").value);
 
   if (!sucursal || !folio || !fechaTicket || !total) {
-    alert("Completa sucursal, folio, fecha e importe.");
+    alert("Faltan datos detectados. Vuelve a tomar la foto.");
     return;
   }
 
@@ -231,6 +321,7 @@ async function registrarTicketCliente() {
       transaction.set(ticketRef, {
         ticketKey,
         userId: user.uid,
+        clienteEmail: user.email,
         sucursal,
         folio,
         fechaTicket,
@@ -265,10 +356,12 @@ async function registrarTicketCliente() {
       alert("Este ticket ya fue registrado.");
     } else {
       console.error(error);
-      alert("Error al registrar ticket.");
+      alert("Error al registrar ticket. Revisa consola o permisos de Firebase.");
     }
   }
 }
+
+// ================= MONEDERO =================
 
 async function cargarMovimientos(userId) {
   const cont = document.getElementById("listaMovimientos");
@@ -297,6 +390,8 @@ async function cargarMovimientos(userId) {
     `;
   });
 }
+
+// ================= CANJES =================
 
 async function generarCanjeCliente(beneficio, monto) {
   const user = auth.currentUser;
@@ -367,6 +462,8 @@ async function generarCanjeCliente(beneficio, monto) {
     alert("No se pudo generar el canje.");
   }
 }
+
+// ================= HISTORIAL =================
 
 async function mostrarHistorial(tipo) {
   const user = auth.currentUser;
@@ -442,15 +539,19 @@ async function mostrarHistorial(tipo) {
   }
 }
 
+// ================= PASSWORD =================
+
 function togglePassword() {
   const input = document.getElementById("password");
   const icon = document.querySelector(".toggle-pass");
 
+  if (!input) return;
+
   if (input.type === "password") {
     input.type = "text";
-    icon.textContent = "🙈";
+    if (icon) icon.textContent = "🙈";
   } else {
     input.type = "password";
-    icon.textContent = "👁️";
+    if (icon) icon.textContent = "👁️";
   }
 }
