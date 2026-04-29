@@ -50,21 +50,25 @@
 
       <div class="form-group">
         <label>Número de ticket</label>
-        <input type="text" id="folio" placeholder="Ej. 20004" maxlength="5" />
+        <input type="text" id="folio" placeholder="Detectado por OCR" maxlength="5" readonly />
       </div>
 
       <div class="form-group">
         <label>Fecha de consumo</label>
-        <input type="date" id="fechaTicket" />
+        <input type="date" id="fechaTicket" readonly />
       </div>
 
       <div class="form-group">
         <label>Importe total</label>
-        <input type="number" id="totalTicket" placeholder="0.00" step="0.01" />
+        <input type="number" id="totalTicket" placeholder="Detectado por OCR" step="0.01" readonly />
       </div>
 
-      <button class="btn-primary" onclick="registrarTicketCliente()">
+      <button id="btnRegistrarTicket" class="btn-primary" onclick="registrarTicketCliente()" disabled>
         Registrar ticket
+      </button>
+
+      <button class="btn-secondary" onclick="reiniciarEscaneoTicket()">
+        Volver a tomar foto
       </button>
     </section>
   </main>
@@ -79,6 +83,5 @@
   <script src="firebase.js"></script>
   <script src="ocr.js"></script>
   <script src="cliente.js"></script>
-  
 </body>
 </html>
