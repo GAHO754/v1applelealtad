@@ -43,8 +43,10 @@ function limpiarTextoOCR(texto) {
   return String(texto || "")
     .replace(/\r/g, "\n")
     .replace(/[|]/g, " ")
-    .replace(/T0TAL|TOTAI|TOTA1|T0TA1|TOTL/gi, "TOTAL")
     .replace(/T\s*O\s*T\s*A\s*L/gi, "TOTAL")
+    .replace(/T\s*0\s*T\s*A\s*L/gi, "TOTAL")
+    .replace(/T\s*o\s*t\s*a\s*l/gi, "TOTAL")
+    .replace(/T0TAL|TOTAI|TOTA1|T0TA1|TOTL/gi, "TOTAL")
     .replace(/SUB[-\s]*TOTAL|SUB[-\s]*T0TAL/gi, "SUBTOTAL")
     .replace(/IMP[.\s]*TOTAL|IMPT[.\s]*TOTAL/gi, "IMP.TOTAL")
     .replace(/IVA\s*IMPUESTO/gi, "IVA IMPUESTO")
@@ -127,12 +129,16 @@ function extraerTotal(texto) {
   for (let i = 0; i < lineas.length; i++) {
     const lineaOriginal = lineas[i];
     const linea = lineaOriginal.toUpperCase();
+    const lineaCompacta = linea.replace(/\s+/g, "");
 
+    // Ignorar totales incorrectos
     if (
       linea.includes("SUBTOTAL") ||
+      linea.includes("SUB-TOTAL") ||
       linea.includes("IVA") ||
-      linea.includes("IMP.") ||
       linea.includes("IMPUESTO") ||
+      linea.includes("IMP.TOTAL") ||
+      linea.includes("IMPTOTAL") ||
       linea.includes("PROPINA") ||
       linea.includes("VISA") ||
       linea.includes("MASTER") ||
@@ -142,7 +148,12 @@ function extraerTotal(texto) {
       continue;
     }
 
-    if (!linea.startsWith("TOTAL")) continue;
+    // Detecta TOTAL normal y T o t a l separado
+    const esTotal =
+      linea.startsWith("TOTAL") ||
+      lineaCompacta.startsWith("TOTAL");
+
+    if (!esTotal) continue;
 
     const montos = lineaOriginal.match(/\$?\s*\d{1,6}[.,]\d{2}/g);
 
@@ -150,12 +161,22 @@ function extraerTotal(texto) {
       return normalizarMonto(montos[montos.length - 1]).toFixed(2);
     }
 
+    // Si el monto viene en la siguiente línea
     const siguiente = lineas[i + 1] || "";
-    const match2 = siguiente.match(/\$?\s*\d{1,6}[.,]\d{2}/);
+    const montoSiguiente = siguiente.match(/\$?\s*\d{1,6}[.,]\d{2}/);
 
-    if (match2) {
-      return normalizarMonto(match2[0]).toFixed(2);
+    if (montoSiguiente) {
+      return normalizarMonto(montoSiguiente[0]).toFixed(2);
     }
+  }
+
+  // Fallback: buscar el primer TOTAL antes de VISA/PROPINA
+  const textoCompleto = lineas.join("\n").toUpperCase();
+
+  const zona = textoCompleto.match(/T\s*O\s*T\s*A\s*L[\s\S]{0,40}?(\d{1,6}[.,]\d{2})/i);
+
+  if (zona && zona[1]) {
+    return normalizarMonto(zona[1]).toFixed(2);
   }
 
   return "";
