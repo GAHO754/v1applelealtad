@@ -1,6 +1,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyDudE8w4AZx9o3sB3pdaVFQah1GeIGJI3M",
   authDomain: "applev1demo.firebaseapp.com",
+  databaseURL: "https://applev1demo-default-rtdb.firebaseio.com",
   projectId: "applev1demo",
   storageBucket: "applev1demo.firebasestorage.app",
   messagingSenderId: "1046800874782",
@@ -11,7 +12,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
-
 const db = firebase.firestore();
 
 db.settings({
