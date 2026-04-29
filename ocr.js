@@ -1,45 +1,76 @@
-// ocr.js PRO Applebee's FINAL CORREGIDO
+// ocr.js PRODUCCIÓN Applebee's
 
-function normalizarTextoBase(texto) {
+async function prepararImagenOCR(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const maxWidth = 1600;
+      const scale = Math.min(maxWidth / img.width, 1);
+
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11;
+        const contrast = gray > 145 ? 255 : 0;
+
+        data[i] = contrast;
+        data[i + 1] = contrast;
+        data[i + 2] = contrast;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+
+      canvas.toBlob(blob => {
+        if (!blob) reject("No se pudo procesar imagen");
+        else resolve(blob);
+      }, "image/png");
+    };
+
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function limpiarTextoOCR(texto) {
   return String(texto || "")
     .replace(/\r/g, "\n")
     .replace(/[|]/g, " ")
-    .replace(/T\s*0\s*T\s*A\s*L/gi, "TOTAL")
+    .replace(/T0TAL|TOTAI|TOTA1|T0TA1|TOTL/gi, "TOTAL")
     .replace(/T\s*O\s*T\s*A\s*L/gi, "TOTAL")
-    .replace(/T\s*o\s*t\s*a\s*l/gi, "TOTAL")
-    .replace(/T0TAL/gi, "TOTAL")
-    .replace(/TOTAI/gi, "TOTAL")
-    .replace(/TOTA1/gi, "TOTAL")
-    .replace(/SUB[-\s]*TOTAL/gi, "SUBTOTAL")
-    .replace(/IMP[.\s]*TOTAL/gi, "IMP.TOTAL")
-    .replace(/IMPT[.\s]*TOTAL/gi, "IMP.TOTAL")
+    .replace(/SUB[-\s]*TOTAL|SUB[-\s]*T0TAL/gi, "SUBTOTAL")
+    .replace(/IMP[.\s]*TOTAL|IMPT[.\s]*TOTAL/gi, "IMP.TOTAL")
     .replace(/IVA\s*IMPUESTO/gi, "IVA IMPUESTO")
-    .replace(/PROP1NA/gi, "PROPINA")
-    .replace(/PR0PINA/gi, "PROPINA");
+    .replace(/PROP1NA|PR0PINA/gi, "PROPINA");
 }
 
 function obtenerLineas(texto) {
-  return normalizarTextoBase(texto)
+  return limpiarTextoOCR(texto)
     .split("\n")
     .map(l => l.replace(/\s+/g, " ").trim())
     .filter(Boolean);
 }
 
 function normalizarMonto(valor) {
-  if (!valor) return 0;
-
   return Number(
-    String(valor)
-      .replace(/\$/g, "")
+    String(valor || "")
+      .replace("$", "")
       .replace(",", ".")
       .replace(/[^\d.]/g, "")
   );
 }
 
 function extraerFecha(texto) {
-  const limpio = normalizarTextoBase(texto);
-  const match = limpio.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\b/);
+  const limpio = limpiarTextoOCR(texto);
 
+  const match = limpio.match(/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})\b/);
   if (!match) return "";
 
   const dd = match[1].padStart(2, "0");
@@ -55,13 +86,13 @@ function extraerFolio(texto) {
 
   const ignorar = new Set(["32530", "1585"]);
 
-  let match = todo.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}[\s\S]{0,100}\d{1,2}:\d{2}[\s\S]{0,60}\b(\d{5})\b/);
+  let match = todo.match(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}[\s\S]{0,90}\d{1,2}:\d{2}[\s\S]{0,60}\b(\d{5})\b/);
   if (match && !ignorar.has(match[1])) return match[1];
 
   const idxFecha = lineas.findIndex(l => /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/.test(l));
 
   if (idxFecha >= 0) {
-    const zona = lineas.slice(idxFecha, idxFecha + 8).join(" ");
+    const zona = lineas.slice(idxFecha, idxFecha + 7).join(" ");
     const nums = zona.match(/\b\d{5}\b/g) || [];
 
     for (const n of nums) {
@@ -71,7 +102,7 @@ function extraerFolio(texto) {
 
   for (let i = 0; i < lineas.length; i++) {
     if (/\d{1,2}:\d{2}/.test(lineas[i])) {
-      const zonaHora = lineas.slice(i, i + 5).join(" ");
+      const zonaHora = lineas.slice(i, i + 4).join(" ");
       const nums = zonaHora.match(/\b\d{5}\b/g) || [];
 
       for (const n of nums) {
@@ -96,7 +127,6 @@ function extraerTotal(texto) {
   for (let i = 0; i < lineas.length; i++) {
     const lineaOriginal = lineas[i];
     const linea = lineaOriginal.toUpperCase();
-    const lineaSinEspacios = linea.replace(/\s+/g, "");
 
     if (
       linea.includes("SUBTOTAL") ||
@@ -112,11 +142,7 @@ function extraerTotal(texto) {
       continue;
     }
 
-    const esTotalReal =
-      linea.startsWith("TOTAL") ||
-      lineaSinEspacios.startsWith("TOTAL");
-
-    if (!esTotalReal) continue;
+    if (!linea.startsWith("TOTAL")) continue;
 
     const montos = lineaOriginal.match(/\$?\s*\d{1,6}[.,]\d{2}/g);
 
@@ -138,7 +164,9 @@ function extraerTotal(texto) {
 async function analizarTicketOCR(file) {
   if (!file) throw new Error("No hay imagen.");
 
-  const result = await Tesseract.recognize(file, "spa+eng", {
+  const imagenProcesada = await prepararImagenOCR(file);
+
+  const result = await Tesseract.recognize(imagenProcesada, "spa+eng", {
     logger: m => {
       const status = document.getElementById("ocrStatus");
       if (status && m.status) {
@@ -156,7 +184,7 @@ async function analizarTicketOCR(file) {
   console.log("===== OCR ORIGINAL =====");
   console.log(textoOriginal);
   console.table(obtenerLineas(textoOriginal));
-  console.log({ folio, fecha, total });
+  console.log("RESULTADO OCR:", { folio, fecha, total });
 
   return { folio, fecha, total };
 }
