@@ -151,86 +151,100 @@ async function registrarTicketCliente() {
     const ticketRef = db.collection("tickets").doc(ticketKey);
     const userRef = db.collection("users").doc(user.uid);
 
-    const ticketsDia = await db.collection("tickets")
+    const ticketDoc = await ticketRef.get();
+
+    if (ticketDoc.exists) {
+      throw new Error("DUPLICADO");
+    }
+
+    const ticketsDiaSnap = await db.collection("tickets")
       .where("userId", "==", user.uid)
       .where("fechaTicket", "==", fechaTicket)
       .get();
 
-    if (ticketsDia.size >= 3) {
+    if (ticketsDiaSnap.size >= 3) {
       throw new Error("LIMITE_DIA");
     }
 
-    const monederoBase = Number((total * 0.05).toFixed(2));
+    const monederoBase = Number((total * PERCENT_BACK).toFixed(2));
     const bonoExtra = Math.random() < 0.25 ? 5 : 0;
     const monederoGenerado = Number((monederoBase + bonoExtra).toFixed(2));
-    const venceAt = addDays(fechaTicket, 180);
+    const venceAt = addDays(fechaTicket, VENCE_DIAS);
 
-    await db.runTransaction(async (transaction) => {
-      const ticketDoc = await transaction.get(ticketRef);
+    const movementRef = db.collection("walletMovements").doc();
 
-      if (ticketDoc.exists) {
-        throw new Error("DUPLICADO");
-      }
+    await ticketRef.set({
+      ticketKey,
+      userId: user.uid,
+      clienteEmail: user.email,
+      sucursal,
+      folio,
+      fechaTicket,
+      total,
+      porcentajeMonedero: PERCENT_BACK,
+      monederoBase,
+      bonoExtra,
+      monederoGenerado,
+      venceAt,
+      status: "registrado",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-      const movementRef = db.collection("walletMovements").doc();
+    await movementRef.set({
+      userId: user.uid,
+      tipo: "abono",
+      concepto: bonoExtra > 0
+        ? "Registro de ticket + bono sorpresa"
+        : "Registro de ticket",
+      ticketKey,
+      monto: monederoGenerado,
+      monederoBase,
+      bonoExtra,
+      venceAt,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
 
-      transaction.set(ticketRef, {
-        ticketKey,
-        userId: user.uid,
-        clienteEmail: user.email,
-        sucursal,
-        folio,
-        fechaTicket,
-        total,
-        porcentajeMonedero: 0.05,
-        monederoBase,
-        bonoExtra,
-        monederoGenerado,
-        venceAt,
-        status: "registrado",
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      transaction.set(movementRef, {
-        userId: user.uid,
-        tipo: "abono",
-        concepto: bonoExtra > 0
-          ? "Registro de ticket + bono sorpresa"
-          : "Registro de ticket",
-        ticketKey,
-        monto: monederoGenerado,
-        monederoBase,
-        bonoExtra,
-        venceAt,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      transaction.update(userRef, {
-        saldoDisponible: firebase.firestore.FieldValue.increment(monederoGenerado),
-        totalGastado: firebase.firestore.FieldValue.increment(total),
-        ticketsRegistrados: firebase.firestore.FieldValue.increment(1)
-      });
+    await userRef.update({
+      saldoDisponible: firebase.firestore.FieldValue.increment(monederoGenerado),
+      totalGastado: firebase.firestore.FieldValue.increment(total),
+      ticketsRegistrados: firebase.firestore.FieldValue.increment(1)
     });
 
     if (bonoExtra > 0) {
-      alert(`🎉 Ticket registrado correctamente.\n\nGanaste ${money(monederoBase)} de dinero electrónico.\nAdemás recibiste ${money(bonoExtra)} extra por ser cliente fiel.\n\nTotal agregado: ${money(monederoGenerado)}\n\n¡Te esperamos en tu próxima visita!`);
+      alert(
+        `🎉 Ticket registrado correctamente.\n\n` +
+        `Ganaste ${money(monederoBase)} de dinero electrónico.\n` +
+        `Además recibiste ${money(bonoExtra)} extra por ser cliente fiel.\n\n` +
+        `Total agregado: ${money(monederoGenerado)}\n\n` +
+        `¡Te esperamos en tu próxima visita!`
+      );
     } else {
-      alert(`✅ Ticket registrado correctamente.\n\nGanaste ${money(monederoBase)} de dinero electrónico.\n\n¡Te esperamos en tu próxima visita!`);
+      alert(
+        `✅ Ticket registrado correctamente.\n\n` +
+        `Ganaste ${money(monederoBase)} de dinero electrónico.\n\n` +
+        `¡Te esperamos en tu próxima visita!`
+      );
     }
 
     window.location.href = "panel.html";
 
   } catch (error) {
     console.error("ERROR REAL AL REGISTRAR:", error);
+    console.error("CODE:", error.code);
+    console.error("MESSAGE:", error.message);
 
     if (error.message === "DUPLICADO") {
       alert("Este ticket ya fue registrado para esta fecha.");
     } else if (error.message === "LIMITE_DIA") {
-      alert("Ya alcanzaste el límite de 3 tickets por día.");
+      alert("Ya alcanzaste el límite de 3 tickets registrados por día.");
     } else if (error.message === "FALTAN_DATOS") {
       alert("Faltan datos del ticket.");
     } else {
-      alert("No se pudo registrar el ticket. Revisa reglas de Firebase o consola.");
+      alert(
+        "No se pudo registrar el ticket.\n\n" +
+        "Código: " + (error.code || "sin código") + "\n" +
+        "Mensaje: " + (error.message || "sin mensaje")
+      );
     }
 
     if (btn) {
