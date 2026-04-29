@@ -1,7 +1,8 @@
+// firebase.js
+
 const firebaseConfig = {
   apiKey: "AIzaSyDudE8w4AZx9o3sB3pdaVFQah1GeIGJI3M",
   authDomain: "applev1demo.firebaseapp.com",
-  databaseURL: "https://applev1demo-default-rtdb.firebaseio.com",
   projectId: "applev1demo",
   storageBucket: "applev1demo.firebasestorage.app",
   messagingSenderId: "1046800874782",
@@ -9,17 +10,30 @@ const firebaseConfig = {
   measurementId: "G-SC03N02S0R"
 };
 
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
 const auth = firebase.auth();
-const rtdb = firebase.database();
+const db = firebase.firestore();
 
-db.settings({
-  experimentalForceLongPolling: true,
-  merge: true
-});
+try {
+  db.settings({
+    experimentalForceLongPolling: true,
+    merge: true
+  });
+} catch (e) {
+  console.warn("Firestore settings ya estaban aplicadas:", e);
+}
 
 let storage = null;
+
 if (firebase.storage) {
   storage = firebase.storage();
 }
+
+console.log("Firebase conectado correctamente:", {
+  auth: !!auth,
+  db: !!db,
+  storage: !!storage
+});
