@@ -200,11 +200,20 @@ async function procesarTicketOCR() {
     document.getElementById("fechaTicket").value = fecha;
     document.getElementById("totalTicket").value = total;
 
-    if (!folio || !fecha || !total) {
-      status.innerText = "No se detectaron todos los datos. Vuelve a tomar la foto.";
-      alert("No se detectó folio, fecha o total. Vuelve a tomar la foto.");
-      return;
-    }
+
+   if (!folio || !fecha || !total) {
+  console.log("DEBUG OCR:", { folio, fecha, total });
+
+  status.innerText = `No detectado → 
+  Folio: ${folio || "❌"} 
+  Fecha: ${fecha || "❌"} 
+  Total: ${total || "❌"}`;
+
+  alert("No se detectaron todos los datos. Toma la foto completa, con buena luz y sin cortar el ticket.");
+  return;
+}
+
+    
 
     if (!/^\d{5}$/.test(folio)) {
       status.innerText = "El folio detectado no es válido. Vuelve a tomar la foto.";
